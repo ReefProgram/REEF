@@ -1,16 +1,12 @@
-Bankroll $498.00 | per-bet 15%-20% cap $100 | nightly cap 60% = $298.80
-#  Pick                            Odds Conf   Target  PreScale   Stake    %BR   ToWin
-1  Knicks +3.5                     -110    5    99.60     99.60      66  13.3%   60.00
-2  Under 221.5                     -108    3    87.15     87.15      58  11.6%   53.70
-3  Suns ML                          120    4    93.38     93.38      62  12.4%   74.40
-4  Wolves -2.5                     -112    3    87.15     87.15      58  11.6%   51.79
-5  Under 228                       -110    2    80.92     80.92      53  10.6%   48.18
-Total exposure $297 = 59.6% of bankroll (cap 60%)
-NOTE: Exposure $448.20 > cap $298.80 (60%); scaled all stakes x0.667.
-NOTE: Scaled stakes fall below the 15% floor; the nightly cap wins over the per-bet floor.
+Bankroll $500.00 | gate 75 | stake 15%@75 -> 20%@95+ | per-bet cap $100 | nightly cap 60% = $300.00
+#  Pick                    Odds  Conf  Decision  Target  PreScale  Stake    %BR
+1  Knicks +3.5             -110    91  PLACE      95.00     95.00     95  19.0%
+2  Under 221.5             -108    79  PLACE      80.00     80.00     80  16.0%
+3  Suns ML                 +120    84  PLACE      86.25     86.25     86  17.2%
+4  Wolves -2.5             -112    68  PASS      (confidence 68 < 75)
+5  Heat +6                 -110    72  PASS      (confidence 72 < 75)
+Placed 3, passed 2. Exposure $261 = 52.2% of bankroll (cap 60%)
 Correlation flags:
-  - SAME SLATE: all 5 bets settle tonight; a bad night hits every stake at once
+  - SAME SLATE: all 3 placed bets settle tonight; one bad night hits every stake
   - SIDE+TOTAL same game (BOS @ NYK) #1<->#2
   - SHARED FACTOR (back-to-back) #1<->#2
-  - SIDE+TOTAL same game (LAL @ PHX) #3<->#5
-  - SHARED INJURY NEWS (lal star ankle) #3<->#5

@@ -1,2 +1,3 @@
 __pycache__/
-data/lines_*.json
+data/monitor_*.log
+data/fair/*.json

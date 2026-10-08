@@ -1,0 +1,32 @@
+[EXAMPLE] Bankroll $500.00 | gate 75 | tiers 75-84=10% 85-94=15% 95+=20% | cap/trade $100 | nightly cap 60% = $300.00 | hurdle 2c & 3%
+#1 KXNBAGAME-26OCT22BOSNYK-NYK BUY YES (hold) conf 96 fair 0.62 | bid 0.51 ask 0.53
+   PLACE 165 @ avg 0.5403 | tier 20% -> $100.00 scaled->$92.31
+   cost: notional $89.15 + fee $2.89 = all-in $92.04 (18.4% BR) | spread $1.65 slippage $1.70 est-exit $0.00
+   fee math: ceil(0.07x50x0.53x0.47=0.8719)=$0.88 + ceil(0.07x60x0.54x0.46=1.0433)=$1.05 + ceil(0.07x55x0.55x0.45=0.9529)=$0.96
+   EV after all costs: $10.26 = +6.22c/contract (+11.1%)
+#2 KXNBATOTAL-26OCT22BOSNYK-222 BUY NO (hold) conf 86 fair 0.58 | bid 0.49 ask 0.53
+   PLACE 125 @ avg 0.5320 | tier 15% -> $75.00 scaled->$69.23
+   cost: notional $66.50 + fee $2.19 = all-in $68.69 (13.7% BR) | spread $2.50 slippage $0.25 est-exit $0.00
+   fee math: ceil(0.07x100x0.53x0.47=1.7437)=$1.75 + ceil(0.07x25x0.54x0.46=0.4347)=$0.44
+   EV after all costs: $3.81 = +3.05c/contract (+5.5%)
+#3 KXNBAGAME-26OCT22LALPHX-PHX BUY YES (trade) conf 80 fair 0.53 | bid 0.45 ask 0.46
+   PLACE 96 @ avg 0.4600 | tier 10% -> $50.00 scaled->$46.15
+   cost: notional $44.16 + fee $1.67 = all-in $45.83 (9.2% BR) | spread $0.48 slippage $0.00 est-exit $2.16
+   fee math: ceil(0.07x96x0.46x0.54=1.6692)=$1.67 | est exit: half-spread $0.48 + fee $1.68
+   EV after all costs: $2.89 = +3.01c/contract (+6.0%)
+#4 KXNBASPREAD-26OCT22DENMIN-MIN3 BUY YES (hold) conf 82 fair 0.53 | bid 0.48 ask 0.52
+   1-lot: all-in 0.5400 fee math ceil(0.07x1x0.52x0.48=0.0175)=$0.02 -> EV -1.00c
+   PASS: edge after costs -1.0c/-1.9% < hurdle 2c & 3%
+#5 KXNBAGAME-26OCT22MIAORL-MIA BUY YES (hold) conf 70 fair 0.44 | bid 0.33 ask 0.36
+   1-lot: all-in 0.3800 fee math ceil(0.07x1x0.36x0.64=0.0161)=$0.02 -> EV +6.00c
+   PASS: confidence 70 < 75
+#6 KXNBAGAME-26OCT22GSWSAC-SAC BUY YES (hold) conf 95 fair 0.60 | bid 0.49 ask 0.52
+   PLACE 167 @ avg 0.5320 | tier 20% -> $100.00 scaled->$92.31
+   cost: notional $88.85 + fee $2.92 = all-in $91.77 (18.4% BR) | spread $2.51 slippage $2.01 est-exit $0.00
+   fee math: ceil(0.07x60x0.52x0.48=1.0483)=$1.05 + ceil(0.07x60x0.53x0.47=1.0462)=$1.05 + ceil(0.07x47x0.55x0.45=0.8143)=$0.82
+   EV after all costs: $8.43 = +5.05c/contract (+9.2%)
+Placed 4, passed 2. Exposure $298.33 = 59.7% of bankroll (cap 60%)
+NOTE: Pre-cap budgets $325.00 > nightly cap $300.00; budgets scaled x0.923.
+Correlation flags: SAME SLATE: all 4 trades resolve tonight; one bad night hits every position; SIDE+TOTAL same game (26OCT22BOSNYK) #1<->#2; SHARED FACTOR (back-to-back) #1<->#2
+
+[paper ledger updated; post-run report -> data/summaries/2026-10-22.md]

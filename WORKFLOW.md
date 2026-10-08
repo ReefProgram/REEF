@@ -1,36 +1,41 @@
-# Daily workflow (NBA only, paper trading)
+# Daily workflow (NBA on Kalshi, paper only)
 
-**Run window: 3:00-4:00 PM PT daily.** That's late enough for afternoon injury reports and shootaround news, and early enough to beat 4:00 PM PT (7:00 ET) tips. Use `python3 bookie.py lines --date YYYY-MM-DD` with tonight's date.
+**Run window: 3:00-4:00 PM PT daily.** This comes after afternoon injury reports and before 4:00 PM PT (7:00 ET) tips. It uses only public read-only Kalshi data, places no real orders, and uses no credentials.
 
 ## 1. RUN (3:00-4:00 PM PT)
-| Step | What | Command / output |
+| Step | What | Command |
 |---|---|---|
-| 1. Gather lines | Pull tonight's slate. Cross-check Covers, Action Network and VegasInsider for the best number, openers and splits. | `python3 bookie.py lines` -> `data/lines_YYYYMMDD.json` |
-| 2. Research | For each game: injuries and minutes limits, rest/B2B/3-in-4, travel, coaching and rotation changes, motivation, matchup, line movement. | notes |
-| 3. Score | Rubric 0-100 (value 30, injury/rest 25, matchup 20, situational 15, movement 10). Write `picks.json`. | `picks.json` |
-| 4. Size (dry run) | Check the gate, the 15-20% sizing, the $ cap, the 60% exposure scaling and the correlation flags. | `python3 bookie.py size picks.json` |
-| 5. Auto-place | Picks scoring 75+ (top 5) are logged `placed`. The rest are logged `passed` with reasons. Paper only. | `python3 bookie.py run picks.json` |
-| 6. Summary | The post-run report is written automatically. | `data/summaries/YYYY-MM-DD.md` |
+| 1. Gather markets and lines | List tonight's Kalshi NBA events and tickers. Pull sportsbook lines (ESPN, Covers, Action Network, VegasInsider) as the fair-probability reference and de-vig them. | `python3 bookie.py markets --date YYYY-MM-DD` |
+| 2. Research | Injuries and minutes limits, rest and back-to-backs, travel, coaching and rotations, motivation, matchup, movement. | notes |
+| 3. Score | Rubric 0-100. Choose side (YES or NO), style (hold or trade) and the fair probability for that side. Check the live cost: | `python3 bookie.py book TICKER --side yes --contracts 100 --fair 0.62` |
+| 4. Size (dry run) | Confidence gate (75), cost gate (≥2¢ **and** ≥3% after all costs), tiers 10/15/20%, $100 cap per trade, 60% nightly cap, max 5, correlation flags. | `python3 bookie.py size picks.json` |
+| 5. Auto-place | Trades that pass both gates are logged `placed`. The rest are logged `passed` with reasons. | `python3 bookie.py run picks.json` |
+| 6. Summary | Post-run report with the fee math. | `data/summaries/YYYY-MM-DD.md` (written automatically) |
 
-No approval step. The ledger is the only "sportsbook." Nothing is ever sent anywhere.
+## 2. LIVE / INTRA-GAME (optional, trade style)
+```
+# fair probs (YES side) the agent keeps updated during the game:
+#   data/fair/KXNBAGAME-26OCT22BOSNYK.json
+#   {"KXNBAGAME-26OCT22BOSNYK-NYK": {"fair": 0.64, "confidence": 82, "style": "trade", "reasoning": "..."}}
+python3 bookie.py monitor --event KXNBAGAME-26OCT22BOSNYK --dry-run       # flag only
+python3 bookie.py monitor --event KXNBAGAME-26OCT22BOSNYK --interval 15   # paper-execute
+```
+- **Entries** need confidence ≥75 and EV after fees, spread, slippage and estimated exit costs ≥ the hurdle. They must also fit the tier, the $ cap, the 60% cap and the max of 5.
+- **Exits** happen when net sale proceeds after walking the bids and paying the exit fee beat hold EV by ≥2¢ per contract.
+- Polling uses `poll_seconds` (15 by default, with a floor of `min_poll_seconds`, 5). Requests are spaced at least `request_spacing_seconds` apart, and a 429 triggers a back-off. Every action is logged to `data/monitor_<event>.log` and the ledger.
 
-## 2. CLOSE (5-15 min before each tip)
-Record the closing line and odds for every placed bet:
+## 3. CLOSE (5-15 min before each tip)
 ```
-python3 bookie.py close 1 --line 2.5 --odds -110     # spread/total
-python3 bookie.py close 3 --odds +105                # moneyline
+python3 bookie.py close 1 --live          # last Kalshi mid for your side -> CLV (cents and implied pp)
+python3 bookie.py close 1 --price 0.58    # or a manual price
 ```
-This computes CLV (points and implied probability) and refreshes the summary.
 
-## 3. SETTLE (next morning)
+## 4. SETTLE (next morning)
 ```
-python3 bookie.py settle 1 win      # win | loss | push
-python3 bookie.py status            # bankroll, record, ROI, CLV, open bets
+python3 bookie.py settle 1 win            # win | loss | void ($1/contract on win, no settlement fee)
+python3 bookie.py exit 3 --live           # paper trade-out before settlement (walks bids, exit fee)
+python3 bookie.py status                  # bankroll, W-L, fees paid, CLV, open positions
 ```
-The bankroll updates from American odds, and the next run sizes off the new bankroll automatically.
 
 ## Weekly
-Review `status`: is the bets' CLV positive, and how much did the passed picks save? If CLV is negative over 50 or more bets, raise `min_confidence` before changing anything else.
-
-## Scheduling (optional)
-To automate this on a box, use cron with PT times, for example `30 15 * * *` for the run, then close and settle as above. The research and scoring step still needs the agent. The CLI only enforces the rules and keeps the books.
+Check CLV and fees paid against gross EV. If fees eat most of the edge, raise `min_edge_cents`. If CLV is negative over 50 or more trades, raise `min_confidence`.

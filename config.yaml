@@ -1,14 +1,39 @@
-# NBA Bookie config. PAPER TRADING ONLY: "placed" = written to data/bets.csv.
-# No sportsbook integration exists and none should ever be added.
-# Flat key: value format so it parses with or without PyYAML.
-league: NBA                   # NBA only
-run_window_pt: "15:00-16:00"  # daily run window, Pacific Time
-starting_bankroll: 500        # dollars; used by `bookie.py reset`
-min_confidence: 75            # 0-100 score; below this a pick is logged 'passed', never placed
-full_confidence: 95           # score at/above which stake hits max_pct
-min_pct: 0.15                 # stake % of current bankroll at min_confidence
-max_pct: 0.20                 # stake % of current bankroll at full_confidence
-per_bet_cap: 100              # hard dollar cap on any single bet
-nightly_exposure_cap: 0.60    # max total stakes per night as % of current bankroll
-max_picks: 5                  # max placed bets per night (0 is fine when there's no edge)
-round_to: 1                   # round stakes down to this many dollars
+# NBA Bookie config: Kalshi NBA markets, PAPER ledger only.
+# "Placed" = written to data/bets.csv. Read-only public market data; no credentials,
+# no order/portfolio endpoints, ever. Flat key: value so it parses with or without PyYAML.
+league: NBA                         # NBA only
+run_window_pt: "15:00-16:00"        # daily run window, Pacific Time
+starting_bankroll: 500              # dollars; used by `bookie.py reset`
+
+# --- Kalshi public API (read-only) ---
+api_base: https://external-api.kalshi.com/trade-api/v2    # per docs.kalshi.com quick start (Oct 2026)
+api_base_fallback: https://api.elections.kalshi.com/trade-api/v2
+series: KXNBAGAME,KXNBASPREAD,KXNBATOTAL                   # game winner, spread, total
+orderbook_depth: 20
+
+# --- Kalshi fees (kalshi.com/docs/kalshi-fee-schedule.pdf, eff. July 7 2026) ---
+# fee = roundup(M x rate x C x P x (1-P)); NBA series report fee_type quadratic_with_maker_fees, fee_multiplier 1
+taker_fee_rate: 0.07
+maker_fee_rate: 0.0175
+fee_multiplier: 1
+fee_round_to: 0.01                  # conservative: round each fill's fee up to the next cent
+assume_taker: true                  # paper fills cross the spread (no resting maker orders)
+
+# --- edge hurdle (after spread, slippage, entry fee, and est. exit costs for trade style) ---
+min_edge_cents: 2                   # EV per contract after ALL costs must be >= 2 cents
+min_edge_pct: 0.03                  # ...AND >= 3% of all-in cost per contract (both must clear)
+slippage_buffer_cents: 0            # extra cents/contract on top of the depth walk (latency cushion)
+
+# --- confidence + sizing ---
+min_confidence: 75                  # 0-100; below = 'passed', never placed
+tier_95_pct: 0.20                   # confidence 95+   -> 20% of current bankroll
+tier_85_pct: 0.15                   # confidence 85-94 -> 15%
+tier_75_pct: 0.10                   # confidence 75-84 -> 10%
+per_trade_cap: 100                  # hard dollar cap per trade (all-in cost incl. fees)
+nightly_exposure_cap: 0.60          # max open all-in cost per night, % of current bankroll
+max_picks: 5                        # max trades per night
+
+# --- live monitor ---
+poll_seconds: 15                    # orderbook poll interval
+min_poll_seconds: 5                 # floor; never poll faster (polite rate use)
+request_spacing_seconds: 1         # min gap between API calls; 429s back off per Retry-After

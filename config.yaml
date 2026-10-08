@@ -1,9 +1,9 @@
-# NBA Bookie config: Kalshi NBA markets, PAPER ledger only.
+# Reef config: Kalshi NBA markets, PAPER ledger only.
 # "Placed" = written to data/bets.csv. Read-only public market data; no credentials,
 # no order/portfolio endpoints, ever. Flat key: value so it parses with or without PyYAML.
 league: NBA                         # NBA only
 run_window_pt: "15:00-16:00"        # daily run window, Pacific Time
-starting_bankroll: 500              # dollars; used by `bookie.py reset`
+starting_bankroll: 500              # dollars; used by `reef.py reset`
 
 # --- Kalshi public API (read-only) ---
 api_base: https://external-api.kalshi.com/trade-api/v2    # per docs.kalshi.com quick start (Oct 2026)

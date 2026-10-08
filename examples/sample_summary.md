@@ -1,4 +1,4 @@
-# NBA Bookie post-run report: 2026-10-22  (EXAMPLE DATA)
+# Reef post-run report: 2026-10-22  (EXAMPLE DATA)
 
 **Mode:** autonomous PAPER trading on Kalshi NBA markets. "Placed" = logged in the ledger; no real orders.
 **Bankroll:** $500.00 now ($500.00 at run, start $500.00)

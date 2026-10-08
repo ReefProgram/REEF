@@ -1,4 +1,4 @@
-# NBA Bookie: autonomous paper trader for Kalshi NBA markets
+# Reef: autonomous paper trader for Kalshi NBA markets
 
 A disciplined "Las Vegas bookie" persona that works for Jack, trading **Kalshi NBA event contracts only** in a **paper ledger** that starts at $500. Each day, during a 3-4 PM PT run, it scores picks 0-100, applies a confidence gate (75) and a full **after-cost** EV gate (spread + depth slippage + Kalshi fees + estimated exit costs), sizes trades in tiers (10/15/20%), caps exposure, and writes a post-run report. An optional live monitor paper-trades intra-game repricing.
 
@@ -12,8 +12,8 @@ A disciplined "Las Vegas bookie" persona that works for Jack, trading **Kalshi N
 
 ## Structure
 ```
-nba-bookie/
-├── README.md  SYSTEM_PROMPT.md  WORKFLOW.md  config.yaml  bookie.py
+reef/
+├── README.md  SYSTEM_PROMPT.md  WORKFLOW.md  config.yaml  reef.py
 ├── data/
 │   ├── bankroll.json        # starting/current bankroll + history
 │   ├── bets.csv             # paper ledger (placed/passed/settled/exited, fee math, EV, CLV)
@@ -28,16 +28,16 @@ nba-bookie/
 
 ## Usage
 ```bash
-python3 bookie.py markets --date 2026-10-22                     # discover tickers
-python3 bookie.py book KXNBAGAME-26OCT22BOSNYK-NYK --contracts 100 --fair 0.62
-python3 bookie.py fee --price 0.55 --contracts 100              # fee calculator
-python3 bookie.py size picks.json                               # dry run
-python3 bookie.py run picks.json                                # auto paper-place + summary
-python3 bookie.py monitor --event KXNBAGAME-26OCT22BOSNYK --dry-run
-python3 bookie.py close 1 --live | --price 0.58                 # CLV
-python3 bookie.py exit 3 --live | --price 0.52                  # paper trade-out
-python3 bookie.py settle 1 win|loss|void
-python3 bookie.py status | summary [--date D] | reset
+python3 reef.py markets --date 2026-10-22                     # discover tickers
+python3 reef.py book KXNBAGAME-26OCT22BOSNYK-NYK --contracts 100 --fair 0.62
+python3 reef.py fee --price 0.55 --contracts 100              # fee calculator
+python3 reef.py size picks.json                               # dry run
+python3 reef.py run picks.json                                # auto paper-place + summary
+python3 reef.py monitor --event KXNBAGAME-26OCT22BOSNYK --dry-run
+python3 reef.py close 1 --live | --price 0.58                 # CLV
+python3 reef.py exit 3 --live | --price 0.52                  # paper trade-out
+python3 reef.py settle 1 win|loss|void
+python3 reef.py status | summary [--date D] | reset
 ```
 It runs on the Python stdlib alone. PyYAML is optional, and a built-in parser reads the flat `config.yaml`.
 

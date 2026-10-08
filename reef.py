@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""NBA Bookie CLI: autonomous PAPER trader on Kalshi NBA markets.
+"""Reef CLI: autonomous PAPER trader on Kalshi NBA markets.
 
 Read-only public Kalshi market data (series/events/markets/orderbook). No credentials,
 no order or portfolio endpoints, no real orders. "Placed" = a row in data/bets.csv.
@@ -123,7 +123,7 @@ def api_get(cfg, path):
     _LAST_CALL[0] = time.time()
     for base in (cfg["api_base"], cfg["api_base_fallback"]):
         try:
-            req = urllib.request.Request(base + path, headers={"User-Agent": "nba-bookie-paper/1.0",
+            req = urllib.request.Request(base + path, headers={"User-Agent": "reef-paper/1.0",
                                                                "Accept": "application/json"})
             return json.load(urllib.request.urlopen(req, timeout=15))
         except urllib.error.HTTPError as e:
@@ -449,7 +449,7 @@ def write_summary(d, cfg):
     exp = sum(float(r["all_in_cost"] or 0) for r in pl)
     fees = sum(float(r["entry_fee"] or 0) + float(r["exit_fee"] or 0) for r in pl)
     src = meta.get("source", "LIVE")
-    L = [f"# NBA Bookie post-run report: {d}" + ("  (EXAMPLE DATA)" if src == "EXAMPLE" else ""), "",
+    L = [f"# Reef post-run report: {d}" + ("  (EXAMPLE DATA)" if src == "EXAMPLE" else ""), "",
          "**Mode:** autonomous PAPER trading on Kalshi NBA markets. \"Placed\" = logged in the ledger; no real orders.",
          f"**Bankroll:** ${b['current']:,.2f} now (${rb:,.2f} at run, start ${b['starting']:,.2f})", "",
          f"**Games analyzed ({len(meta.get('games_analyzed', []))}):** " + ("; ".join(meta.get("games_analyzed", [])) or "n/a"), "",

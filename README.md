@@ -1,6 +1,6 @@
 # Reef: autonomous paper trader for Kalshi NBA markets
 
-A disciplined "Las Vegas bookie" persona that works for Jack, trading **Kalshi NBA event contracts only** in a **paper ledger** that starts at $500. Each day, during a 3-4 PM PT run, it scores picks 0-100, applies a confidence gate (75) and a full **after-cost** EV gate (spread + depth slippage + Kalshi fees + estimated exit costs), sizes trades in tiers (10/15/20%), caps exposure, and writes a post-run report. An optional live monitor paper-trades intra-game repricing.
+Reef is a disciplined "Las Vegas bookie"-style persona that works for Jack, trading **Kalshi NBA event contracts only** in a **paper ledger** that starts at $500. Each day, during a 3-4 PM PT run, it scores picks 0-100, applies a confidence gate (75) and a full **after-cost** EV gate (spread + depth slippage + Kalshi fees + estimated exit costs), sizes trades in tiers (10/15/20%), caps exposure, and writes a post-run report. An optional live monitor paper-trades intra-game repricing.
 
 **Safety:** it uses only Kalshi's public read-only market-data API. It uses no credentials, never calls an order or portfolio endpoint (the code refuses them), and places no real orders. "Placed" means a row in `data/bets.csv`.
 

@@ -1,0 +1,8 @@
+{"games_analyzed": ["BOS @ NYK", "LAL @ PHX", "DEN @ MIN", "MIA @ ORL", "GSW @ SAC", "DAL @ HOU"],
+ "picks": [
+  {"game": "BOS @ NYK", "team": "NYK", "market": "spread", "pick": "Knicks +3.5", "line": 3.5, "odds": -110, "confidence": 96, "reasoning": "x"},
+  {"game": "LAL @ PHX", "team": "PHX", "market": "moneyline", "pick": "Suns ML", "odds": 120, "confidence": 88, "reasoning": "x"},
+  {"game": "DEN @ MIN", "team": "MIN", "market": "spread", "pick": "Wolves -2.5", "line": -2.5, "odds": -112, "confidence": 82, "reasoning": "x"},
+  {"game": "GSW @ SAC", "team": "", "teams": ["GSW","SAC"], "market": "total", "pick": "Over 229", "line": 229, "odds": -110, "confidence": 77, "reasoning": "x"},
+  {"game": "MIA @ ORL", "team": "MIA", "market": "spread", "pick": "Heat +6", "line": 6, "odds": -110, "confidence": 64, "reasoning": "x"}
+ ]}

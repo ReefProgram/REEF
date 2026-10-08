@@ -1,0 +1,12 @@
+Bankroll $500.00 | gate 75 | stake 15%@75 -> 20%@95+ | per-bet cap $100 | nightly cap 60% = $300.00
+#  Pick                    Odds  Conf  Decision  Target  PreScale  Stake    %BR
+1  Knicks +3.5             -110    96  PLACE     100.00    100.00     85  17.0%
+2  Suns ML                 +120    88  PLACE      91.25     91.25     77  15.4%
+3  Wolves -2.5             -112    82  PLACE      83.75     83.75     71  14.2%
+4  Over 229                -110    77  PLACE      77.50     77.50     65  13.0%
+5  Heat +6                 -110    64  PASS      (confidence 64 < 75)
+Placed 4, passed 1. Exposure $298 = 59.6% of bankroll (cap 60%)
+NOTE: Pre-cap exposure $352.50 > nightly cap $300.00; all stakes scaled x0.851.
+NOTE: Scaled stakes sit below the 15% floor: the nightly cap overrides the floor.
+Correlation flags:
+  - SAME SLATE: all 4 placed bets settle tonight; one bad night hits every stake

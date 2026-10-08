@@ -1,0 +1,15 @@
+{
+  "games_analyzed": ["BOS @ NYK", "LAL @ PHX", "DEN @ MIN", "MIA @ ORL", "GSW @ SAC", "DAL @ HOU"],
+  "picks": [
+    {"game": "BOS @ NYK", "team": "NYK", "teams": ["NYK"], "market": "spread", "pick": "Knicks +3.5", "line": 3.5, "odds": -110, "confidence": 91,
+     "reasoning": "BOS 2nd night of B2B after OT; NYK 2 days rest; opened +5, sharp move to +3.5", "factors": ["back-to-back"]},
+    {"game": "BOS @ NYK", "team": "", "teams": ["BOS", "NYK"], "market": "total", "pick": "Under 221.5", "line": 221.5, "odds": -108, "confidence": 79,
+     "reasoning": "Tired BOS legs + NYK bottom-5 pace; model total 216", "factors": ["back-to-back"]},
+    {"game": "LAL @ PHX", "team": "PHX", "teams": ["PHX"], "market": "moneyline", "pick": "Suns ML", "odds": 120, "confidence": 84,
+     "reasoning": "LAL star doubtful (ankle); 3rd road game in 4 nights; model PHX 52% vs 45% implied", "injury_news": ["LAL star ankle"]},
+    {"game": "DEN @ MIN", "team": "MIN", "teams": ["MIN"], "market": "spread", "pick": "Wolves -2.5", "line": -2.5, "odds": -112, "confidence": 68,
+     "reasoning": "Home spot is fine but line already at model number; no edge after vig"},
+    {"game": "MIA @ ORL", "team": "MIA", "teams": ["MIA"], "market": "spread", "pick": "Heat +6", "line": 6, "odds": -110, "confidence": 72,
+     "reasoning": "Spoelstra dog angle, but ORL defense matchup is bad for MIA shooters; below gate"}
+  ]
+}

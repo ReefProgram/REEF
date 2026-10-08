@@ -1,0 +1,14 @@
+# NBA Bookie config. PAPER TRADING ONLY: "placed" = written to data/bets.csv.
+# No sportsbook integration exists and none should ever be added.
+# Flat key: value format so it parses with or without PyYAML.
+league: NBA                   # NBA only
+run_window_pt: "15:00-16:00"  # daily run window, Pacific Time
+starting_bankroll: 500        # dollars; used by `bookie.py reset`
+min_confidence: 75            # 0-100 score; below this a pick is logged 'passed', never placed
+full_confidence: 95           # score at/above which stake hits max_pct
+min_pct: 0.15                 # stake % of current bankroll at min_confidence
+max_pct: 0.20                 # stake % of current bankroll at full_confidence
+per_bet_cap: 100              # hard dollar cap on any single bet
+nightly_exposure_cap: 0.60    # max total stakes per night as % of current bankroll
+max_picks: 5                  # max placed bets per night (0 is fine when there's no edge)
+round_to: 1                   # round stakes down to this many dollars

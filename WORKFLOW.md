@@ -24,6 +24,16 @@ python3 reef.py monitor --event KXNBAGAME-26OCT22BOSNYK --interval 15   # paper-
 - **Exits** happen when net sale proceeds after walking the bids and paying the exit fee beat hold EV by ≥2¢ per contract.
 - Polling uses `poll_seconds` (15 by default, with a floor of `min_poll_seconds`, 5). Requests are spaced at least `request_spacing_seconds` apart, and a 429 triggers a back-off. Every action is logged to `data/monitor_<event>.log` and the ledger.
 
+### In-game exit rules (run automatically inside `monitor`)
+Priority: **confidence decay → stop-loss → blowout → Q3 review → profit target**. All thresholds are in `config.yaml` under `exits:`.
+- **Profit target:** net mark (bids walked, minus the exit fee) ≥ +30% → sell 40%, let the rest ride (once per tier).
+- **Stop-loss:** net mark ≤ −15% on 2 consecutive polls → exit the remainder.
+- **Blowout** (ESPN live score): lead ≥20 with ≤4:00 left in Q3, ≥15 in Q4, or ≥10 with ≤3:00 left. Wrong side → exit. Right side → trim 50%.
+- **End-of-Q3 review:** a logged hold, trim, or exit for every open position. Losers get trimmed 25/40/50%, or exited if down 10+.
+- **Confidence decay:** live confidence below entry − 3 for 2 polls → exit. You can set `"live_confidence": NN` per ticker in the fair file to override the built-in model.
+- **Fee-aware hold:** no sale if the upside to $1 is less than the exit fee + spread, or if the sale nets ≤ $0. In that case it holds to settlement.
+- Simulation (EXAMPLE DATA, temp ledger, no network): `python3 examples/sim_exit_timeline.py`
+
 ## 3. CLOSE (5-15 min before each tip)
 ```
 python3 reef.py close 1 --live          # last Kalshi mid for your side -> CLV (cents and implied pp)

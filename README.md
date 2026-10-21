@@ -13,7 +13,10 @@ Reef is a disciplined "Las Vegas bookie"-style persona that works for Jack, trad
 ## Structure
 ```
 reef/
-├── README.md  SYSTEM_PROMPT.md  WORKFLOW.md  config.yaml  reef.py
+├── README.md  SYSTEM_PROMPT.md  WORKFLOW.md  config.yaml
+├── reef.py                 # CLI
+├── exits.py                # in-game exit rules (used by monitor)
+├── launch_paper.py         # paper launch helper (check / markets / demo / daily / monitor)
 ├── data/
 │   ├── bankroll.json        # starting/current bankroll + history
 │   ├── bets.csv             # paper ledger (placed/passed/settled/exited, fee math, EV, CLV)
@@ -21,9 +24,20 @@ reef/
 │   └── fair/                # live fair-prob files for `monitor` (gitignored)
 └── examples/
     ├── sample_picks.json        # EXAMPLE DATA: 6 picks, inline books
+    ├── picks.template.json      # copy to ../picks.json for a live daily run
+    ├── sim_exit_timeline.py     # offline exit-rules regression
     ├── sample_run_output.txt    # fee math, passes, tiers, cap scaling
     ├── sample_summary.md        # post-run report
     └── sample_fair_file.json    # monitor input format (test only)
+```
+
+## Quick launch (paper, no secrets)
+```bash
+python3 launch_paper.py check          # egress + smoke + exit sim
+python3 launch_paper.py markets        # tonight's Kalshi NBA slate
+python3 launch_paper.py demo           # paper-place EXAMPLE sample picks
+python3 launch_paper.py daily          # markets; size/run picks.json if present
+python3 launch_paper.py monitor --max-polls 2   # dry-run monitor + exit rules
 ```
 
 ## Usage

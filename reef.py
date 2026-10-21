@@ -10,7 +10,7 @@ Commands:
   fee      --price P --contracts N        Kalshi fee calculator
   size     PICKS.json                     dry run: gate, cost model, tiers, caps, flags (no writes)
   run      PICKS.json [--date D]          auto-place/pass in paper ledger + write post-run summary
-  monitor  --event EVT [--dry-run]        poll orderbook; paper entries/exits net of all costs
+  monitor  --event EVT [--dry-run]        poll orderbook; paper entries/exits net of all costs + in-game exit rules (exits.py)
   close    ID [--price P | --live]        record last Kalshi price before tip -> CLV
   exit     ID [--price P | --live]        paper trade-out (walks bids, charges exit fee)
   settle   ID win|loss|void               settle at expiry ($1 or $0 per contract; no settlement fee)
@@ -18,8 +18,9 @@ Commands:
   status                                  bankroll, record, open positions, CLV, fees paid
   reset    [--bankroll 500]               wipe ledger + summaries, reset bankroll
 """
-import argparse, csv, glob, json, math, os, sys, time, urllib.request, urllib.error
+import argparse, csv, glob, json, math, os, re, sys, time, urllib.request, urllib.error
 from datetime import date, datetime
+import exits
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 DATA = os.path.join(ROOT, "data")
@@ -33,7 +34,7 @@ FIELDS = ["id", "date", "source", "event", "ticker", "title", "side", "style", "
           "edge_pct", "pct_bankroll", "status", "reasoning", "fee_math", "correlation_flags",
           "close_price", "clv_cents", "clv_prob", "exit_price", "exit_fee", "result", "pnl",
           "bankroll_after", "placed_at", "closed_at", "settled_at"]
-DEFAULTS = {"league": "NBA", "starting_bankroll": 500,
+DEFAULTS = {"league": "NBA", "starting_bankroll": 500, "run_window_pt": "15:00-16:00",
             "api_base": "https://external-api.kalshi.com/trade-api/v2",
             "api_base_fallback": "https://api.elections.kalshi.com/trade-api/v2",
             "series": "KXNBAGAME,KXNBASPREAD,KXNBATOTAL", "orderbook_depth": 20,
@@ -41,7 +42,7 @@ DEFAULTS = {"league": "NBA", "starting_bankroll": 500,
             "assume_taker": True, "min_edge_cents": 2, "min_edge_pct": 0.03, "slippage_buffer_cents": 0,
             "min_confidence": 75, "tier_95_pct": 0.20, "tier_85_pct": 0.15, "tier_75_pct": 0.10,
             "per_trade_cap": 100, "nightly_exposure_cap": 0.60, "max_picks": 5,
-            "poll_seconds": 15, "min_poll_seconds": 5}
+            "poll_seconds": 15, "min_poll_seconds": 5, "request_spacing_seconds": 1}
 OPEN = ("placed",)
 _LAST_CALL = [0.0]
 
@@ -616,16 +617,22 @@ def cmd_markets(a, cfg):
     for s in str(cfg["series"]).split(","):
         s = s.strip()
         ser = api_get(cfg, f"/series/{s}")["series"]
-        print(f"== {s}: {ser['title']} (fee_type {ser.get('fee_type')}, multiplier {ser.get('fee_multiplier')})")
+        print(f"== {s}: {ser['title']} (fee_type {ser.get('fee_type')}, multiplier {ser.get('fee_multiplier')})",
+              flush=True)
         evs = api_get(cfg, f"/events?series_ticker={s}&status=open&limit=200").get("events", [])
+        n = 0
         for e in evs:
             if tag and tag not in e["event_ticker"]:
                 continue
+            n += 1
             line = f"  {e['event_ticker']:<32} {e.get('title', '')}"
+            # Quotes are an extra API call each; default on for game markets, always with --verbose.
             if s == "KXNBAGAME" or a.verbose:
                 ms = api_get(cfg, f"/markets?event_ticker={e['event_ticker']}").get("markets", [])
                 line += "  | " + "  ".join(f"{m['ticker'].split('-')[-1]} {m.get('yes_bid_dollars')}/{m.get('yes_ask_dollars')}" for m in ms[:4])
-            print(line)
+            print(line, flush=True)
+        if tag and n == 0:
+            print(f"  (no open {s} events matching {tag})", flush=True)
 
 
 def cmd_book(a, cfg):
@@ -656,6 +663,74 @@ def load_fair(path, cli):
     return fair
 
 
+# ---------------- in-game exit rules (exits.py) -> paper ledger ----------------
+EXIT_TAG = re.compile(r"\[(profit_target#\d+|blowout|q3_review|confidence_decay|stop_loss)\]")
+
+
+def manage_exits(r, bk, side, game, states, f, cfg, d, say, dry_run, now_ts=None):
+    """Run exits.decide() for one open position and write any trim/exit/hold to the paper ledger.
+    Returns True if the position changed this poll (caller then skips the legacy fair-value exit)."""
+    ex = exits.exit_config(cfg)
+    if not ex["exit_rules_enabled"]:
+        return False
+    a_, b_ = asks_for(bk, side), bids_for(bk, side)
+    if not b_:
+        return False
+    bid, ask = b_[0][0], (a_[0][0] if a_ else None)
+    eb, ea = fnum(r.get("best_bid")), fnum(r.get("best_ask"))
+    pos = {"id": r["id"], "contracts": int(r["contracts"]), "cost": float(r["all_in_cost"]),
+           "entry_conf": float(r["confidence"]), "p0": float(r["fair_prob"]),
+           "entry_mid": (eb + ea) / 2 if eb is not None and ea is not None else None,
+           "team": f.get("team") or exits.position_team(r["ticker"], side, r.get("event") or None),
+           "done": set(EXIT_TAG.findall(r.get("reasoning", "")))}
+    mkt = {"bid": bid, "ask": ask, "mid": (bid + ask) / 2 if ask is not None else bid,
+           "quote": lambda k: exit_quote(bk, side, k, cfg)}
+    lc = f.get("live_confidence")
+    dec = exits.decide(pos, mkt, game, states.setdefault(r["id"], {}), ex, now_ts or time.time(),
+                       None if lc is None else float(lc))
+    act, tag = dec["action"], f"#{r['id']} {r['ticker']} {side} x{pos['contracts']}"
+    if act in ("none", "wait"):
+        if act == "wait":
+            say(f"WATCH {tag}: {dec['reason']}")
+        return False
+    if act == "hold":
+        say(f"{'FLAG ' if dry_run else ''}HOLD [{dec['rule']}] {tag}: {dec['reason']}")
+        if not dry_run and dec.get("tag"):
+            allr = read_bets(); rr = find(allr, r["id"])
+            rr["reasoning"] += f" | [{dec['rule']}] HOLD: {dec['reason']}"
+            write_bets(allr)
+        return False
+    q, k, n = dec["q"], dec["k"], pos["contracts"]
+    msg = (f"{act.upper()} [{dec['rule']}] {tag}: sell {k} @ avg {q['avg']:.4f}, proceeds ${q['proceeds']:.2f} "
+           f"- exit fee ${q['fee']:.2f} = net ${q['net']:.2f} | {dec['reason']}")
+    if dry_run:
+        say("FLAG " + msg); return False
+    allr, b = read_bets(), load_bankroll(); rr = find(allr, r["id"])
+    if act == "exit":
+        pnl = q["net"] - float(rr["all_in_cost"])
+        rr.update(exit_price=f"{q['avg']:.4f}", exit_fee=f"{q['fee']:.2f}", fee_math=rr["fee_math"] + f" | EXIT {q['fee_math']}",
+                  reasoning=rr["reasoning"] + f" | [{dec['rule']}] EXIT {k}: {dec['reason']}")
+        book_pnl(rr, b, pnl, "exited", "exited")
+    else:  # trim: split sold contracts into a child row (status 'trimmed'); parent keeps the remainder
+        share = k / n
+        child = dict(rr, id=new_id(allr), contracts=k)
+        for fld in ("all_in_cost", "entry_fee", "ev_total", "spread_cost", "slippage_cost", "exit_cost_est"):
+            v = fnum(rr.get(fld))
+            if v is not None:
+                child[fld] = f"{v * share:.2f}"; rr[fld] = f"{v - v * share:.2f}"
+        rr["contracts"] = n - k
+        pnl = q["net"] - float(child["all_in_cost"])
+        child.update(exit_price=f"{q['avg']:.4f}", exit_fee=f"{q['fee']:.2f}",
+                     fee_math=rr["fee_math"] + f" | EXIT {q['fee_math']}",
+                     reasoning=f"[{dec['rule']}] TRIM {k}/{n} of #{rr['id']}: {dec['reason']}")
+        rr["reasoning"] += f" | [{dec['rule']}] trimmed {k}/{n} -> #{child['id']}"
+        book_pnl(child, b, pnl, "trim", "trimmed")
+        allr.append(child)
+    write_bets(allr); save_bankroll(b)
+    say(f"PAPER {msg} -> P/L {pnl:+.2f}, bankroll ${b['current']:.2f}")
+    return True
+
+
 def cmd_monitor(a, cfg):
     """Poll orderbooks; paper-enter/exit only when EV clears fees + spread + slippage + hurdle."""
     interval = max(float(a.interval or cfg["poll_seconds"]), float(cfg["min_poll_seconds"]))
@@ -672,10 +747,14 @@ def cmd_monitor(a, cfg):
         line = f"{now()} {msg}"
         print(line); open(log, "a").write(line + "\n")
 
-    polls = 0
+    polls, exit_states = 0, {}
     while a.max_polls is None or polls < a.max_polls:
         polls += 1
         fair = load_fair(fpath, a.fair)  # re-read each poll so the agent can update fair probs live
+        try:  # live game state for exit rules (ESPN public scoreboard, read-only)
+            game = exits.fetch_game(a.event, cfg)
+        except Exception as e:
+            game = None; say(f"game state unavailable ({e}); blowout/Q3 rules skipped this poll")
         rows, bank = read_bets(), load_bankroll()["current"]
         tonight = [r for r in rows if r["date"] == d and r["status"] == "placed"]
         exposure = sum(float(r["all_in_cost"]) for r in tonight)
@@ -695,6 +774,8 @@ def cmd_monitor(a, cfg):
                     fp = 1 - fp
                 # exits: open positions on this ticker/side
                 for r in [r for r in tonight if r["ticker"] == t and r["side"] == side]:
+                    if manage_exits(r, bk, side, game, exit_states, f, cfg, d, say, a.dry_run):
+                        continue  # in-game exit rule acted (priority over the fair-value exit below)
                     if fp is None:
                         continue
                     xq = exit_quote(bk, side, int(r["contracts"]), cfg)

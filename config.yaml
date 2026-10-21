@@ -37,3 +37,25 @@ max_picks: 5                        # max trades per night
 poll_seconds: 15                    # orderbook poll interval
 min_poll_seconds: 5                 # floor; never poll faster (polite rate use)
 request_spacing_seconds: 1         # min gap between API calls; 429s back off per Retry-After
+
+# --- in-game exit rules (exits.py; applied by `reef.py monitor` to every open position) ---
+# Priority: confidence decay -> stop-loss -> blowout -> Q3 review -> profit target.
+# Every sell must pass the fee-aware hold check (upside left to $1 vs exit fee + spread + slippage).
+# Lists are quoted strings so both PyYAML and the stdlib flat parser read them the same way.
+exits:
+  exit_rules_enabled: true
+  profit_targets: "0.30:0.40"             # gain:fraction; sell 40% at net mark +30%. Add tiers: "0.30:0.40, 0.60:0.25"
+  stop_loss_pct: 0.15                     # exit remainder at net mark -15% vs entry cost...
+  stop_debounce_polls: 2                  # ...only after 2 consecutive polls below it
+  stop_debounce_seconds: 0                # if > 0, use time instead: breach must persist N seconds
+  blowout_thresholds: "3:4:00:20, 4:12:00:15, 4:3:00:10"   # period:clock_left:lead (also applies in later periods)
+  blowout_trim_fraction: 0.50             # right side of a blowout: trim 50% (wrong side: exit)
+  q3_review: true                         # mandatory logged hold/trim/exit once Q3 ends
+  q3_exit_deficit: 10                     # losing at Q3 review and trailing by >= 10 -> exit (else trim)
+  trim_steps: "0.25,0.40,0.50"            # partial-scaling ladder
+  confidence_decay: true
+  decay_buffer: 3                         # exit when live conf < entry conf - 3 (0 = strict)
+  decay_debounce_polls: 2                 # live read must stay below for 2 polls
+  decay_sigma: 12.0                       # NBA final-margin std dev (pts) for the live win-prob model
+  decay_w_model: 0.5                      # conf pts per 1pp change in live model win prob
+  decay_w_price: 0.25                     # conf pts per 1c move in Kalshi mid vs entry mid

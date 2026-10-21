@@ -1,0 +1,21 @@
+{
+  "source": "LIVE",
+  "games_analyzed": ["AWAY @ HOME"],
+  "picks": [
+    {
+      "event": "KXNBAGAME-YYMONDDAWAYHOME",
+      "ticker": "KXNBAGAME-YYMONDDAWAYHOME-HOME",
+      "title": "Home team wins",
+      "teams": ["HOME"],
+      "side": "yes",
+      "style": "hold",
+      "fair_prob": 0.55,
+      "consensus": "no-vig books HOME xx%",
+      "confidence": 80,
+      "rubric": {"value": 20, "injury_rest": 15, "matchup": 15, "situational": 15, "movement": 15},
+      "reasoning": "one line: why Kalshi is wrong after costs",
+      "factors": [],
+      "injury_news": []
+    }
+  ]
+}

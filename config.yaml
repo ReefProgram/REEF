@@ -31,7 +31,7 @@ tier_85_pct: 0.15                   # confidence 85-94 -> 15%
 tier_75_pct: 0.10                   # confidence 75-84 -> 10%
 per_trade_cap: 100                  # hard dollar cap per trade (all-in cost incl. fees)
 nightly_exposure_cap: 0.60          # max open all-in cost per night, % of current bankroll
-max_picks: 5                        # max trades per night
+max_picks: 20                       # allow full NBA slate (AUTO_DRAFT targets every game)
 
 # --- live monitor ---
 poll_seconds: 15                    # orderbook poll interval
@@ -45,9 +45,19 @@ draft:
   draft_confidence: 76              # fixed; just above min_confidence — gates may still reject
   draft_fair_bump: 0.03             # fair_prob = Kalshi YES mid + bump
   draft_style: hold
-  draft_max_picks: 5
+  draft_max_picks: 0                # 0 = every open KXNBAGAME on the slate (no subset filter)
   draft_series: KXNBAGAME
   draft_buffer_minutes: 45          # start window this many minutes before first tip
+
+# --- LIVE trading (NOT enabled) ---
+# Reef ships paper-only. There is no order/portfolio client yet, and no Kalshi
+# credentials in this repo. To go live later you must set ALL of:
+#   live: true
+#   plus env (names only; values never committed):
+#     KALSHI_API_KEY_ID
+#     KALSHI_PRIVATE_KEY_PATH   # PEM file path for RSA-PSS request signing
+# Until then api_get() refuses /orders and /portfolio. Do not invent these values.
+live: false
 
 # --- in-game exit rules (exits.py; applied by `reef.py monitor` to every open position) ---
 # Priority: confidence decay -> stop-loss -> blowout -> Q3 review -> profit target.

@@ -41,7 +41,8 @@ DEFAULTS = {"league": "NBA", "starting_bankroll": 500, "run_window_pt": "15:00-1
             "taker_fee_rate": 0.07, "maker_fee_rate": 0.0175, "fee_multiplier": 1, "fee_round_to": 0.01,
             "assume_taker": True, "min_edge_cents": 2, "min_edge_pct": 0.03, "slippage_buffer_cents": 0,
             "min_confidence": 75, "tier_95_pct": 0.20, "tier_85_pct": 0.15, "tier_75_pct": 0.10,
-            "per_trade_cap": 100, "nightly_exposure_cap": 0.60, "max_picks": 5,
+            "per_trade_cap": 100, "nightly_exposure_cap": 0.60, "max_picks": 20,
+            "live": False,
             "poll_seconds": 15, "min_poll_seconds": 5, "request_spacing_seconds": 1}
 OPEN = ("placed",)
 _LAST_CALL = [0.0]

@@ -33,7 +33,7 @@ DRAFT_DEFAULTS = {
     "draft_confidence": 76,       # just above min_confidence 75; not researched
     "draft_fair_bump": 0.03,      # fair = market mid + bump (YES side)
     "draft_style": "hold",
-    "draft_max_picks": 5,         # align with max_picks
+    "draft_max_picks": 0,         # 0 = every open game on the slate
     "draft_series": "KXNBAGAME",  # game winners only for the auto draft
 }
 
@@ -123,15 +123,16 @@ def draft_for_date(cfg, d, out_path=None, dry_run=False):
             "occurrence_datetime": m.get("occurrence_datetime") or m.get("expected_expiration_time"),
         })
 
-    # Keep the strongest favorites (highest Kalshi mid implied in fair-bump consensus).
+    # Full slate by default (draft_max_picks: 0). If >0, keep strongest favorites only.
     def _mid_from_pick(p):
-        # consensus like "AUTO_DRAFT Kalshi mid=0.665; ..."
         try:
             return float(p["consensus"].split("mid=")[1].split(";")[0])
         except (IndexError, ValueError):
             return float(p["fair_prob"])
-    picks.sort(key=_mid_from_pick, reverse=True)
-    picks = picks[: int(dc["draft_max_picks"])]
+    limit = int(dc["draft_max_picks"])
+    if limit > 0:
+        picks.sort(key=_mid_from_pick, reverse=True)
+        picks = picks[:limit]
     picks.sort(key=lambda p: p["event"])
 
     doc = {

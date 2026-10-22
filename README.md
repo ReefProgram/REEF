@@ -16,7 +16,10 @@ reef/
 ├── README.md  SYSTEM_PROMPT.md  WORKFLOW.md  config.yaml
 ├── reef.py                 # CLI
 ├── exits.py                # in-game exit rules (used by monitor)
-├── launch_paper.py         # paper launch helper (check / markets / demo / daily / monitor)
+├── draft_picks.py          # AUTO_DRAFT picks.json from live Kalshi
+├── run_daily_if_due.py     # tip-relative schedule entrypoint
+├── launch_paper.py         # paper launch helper
+├── .github/workflows/daily-paper.yml
 ├── data/
 │   ├── bankroll.json        # starting/current bankroll + history
 │   ├── bets.csv             # paper ledger (placed/passed/settled/exited, fee math, EV, CLV)
@@ -35,10 +38,23 @@ reef/
 ```bash
 python3 launch_paper.py check          # egress + smoke + exit sim
 python3 launch_paper.py markets        # tonight's Kalshi NBA slate
-python3 launch_paper.py demo           # paper-place EXAMPLE sample picks
-python3 launch_paper.py daily          # markets; size/run picks.json if present
-python3 launch_paper.py monitor --max-polls 2   # dry-run monitor + exit rules
+python3 launch_paper.py draft          # AUTO_DRAFT picks.json from live Kalshi
+python3 launch_paper.py due            # tip-relative due/skip decision
+python3 launch_paper.py daily --draft --execute   # draft + paper-place
+python3 launch_paper.py demo           # EXAMPLE sample picks only
+python3 run_daily_if_due.py            # scheduled entrypoint (hourly GHA)
 ```
+
+## Schedule (tip-relative, not fixed 3 PM)
+
+GitHub Action [`.github/workflows/daily-paper.yml`](.github/workflows/daily-paper.yml) runs **hourly** (`cron: 15 * * * *`).  
+`run_daily_if_due.py` then:
+
+1. Loads today’s NBA tips from the **ESPN public scoreboard** (no API key); falls back to Kalshi `occurrence_datetime`.
+2. **Skips** (exit 0) if there are no games, we’re outside `[first_tip − 45m, first_tip)`, or we already ran for that PT date.
+3. Otherwise drafts `picks.json` (`AUTO_DRAFT`) and runs `launch_paper.py daily --execute` (paper ledger only — no real orders).
+
+AUTO_DRAFT defaults (`config.yaml` → `draft:`): confidence **76**, fair = Kalshi mid **+0.03**. Not human research; Reef gates may still pass/reject.
 
 ## Usage
 ```bash

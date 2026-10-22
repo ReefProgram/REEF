@@ -1,0 +1,97 @@
+# Tip-relative paper daily for Reef (no fixed 3 PM cron, no Kalshi credentials).
+#
+# Runs hourly. The job itself decides whether we're in the pre-tip window:
+#   - No NBA games today (PT) → skip (exit 0)
+#   - Not yet within draft_buffer_minutes before first tip → skip
+#   - Past first tip, or already ran for this PT date → skip
+#   - Else: draft_picks.py → launch_paper.py daily --execute (paper ledger only)
+#
+# Tip times: ESPN public scoreboard (no API key); Kalshi occurrence_datetime fallback.
+# See run_daily_if_due.py and WORKFLOW.md.
+
+name: daily-paper
+
+on:
+  schedule:
+    # Hourly — tip-relative gating is inside run_daily_if_due.py
+    - cron: "15 * * * *"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "check | draft-only | run"
+        required: true
+        default: "check"
+        type: choice
+        options: [check, draft-only, run]
+      force:
+        description: "Ignore window / already-ran (still paper only)"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  due:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: PT date key
+        id: ptdate
+        env:
+          TZ: America/Los_Angeles
+        run: echo "date=$(date +%F)" >> "$GITHUB_OUTPUT"
+
+      # Persist "already ran today" across hourly invocations (fresh checkout each time).
+      - name: Restore automation state
+        uses: actions/cache@v4
+        with:
+          path: data/automation_state.json
+          key: reef-daily-${{ steps.ptdate.outputs.date }}
+          restore-keys: |
+            reef-daily-${{ steps.ptdate.outputs.date }}
+
+      - name: Decide / run
+        env:
+          TZ: America/Los_Angeles
+        run: |
+          set -euo pipefail
+          MODE="${{ github.event.inputs.mode || 'run' }}"
+          FORCE="${{ github.event.inputs.force || 'false' }}"
+          EXTRA=()
+          if [ "$FORCE" = "true" ]; then EXTRA+=(--force); fi
+
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            # Scheduled path: full paper daily when due
+            python3 run_daily_if_due.py "${EXTRA[@]}"
+          elif [ "$MODE" = "check" ]; then
+            python3 run_daily_if_due.py --check-only "${EXTRA[@]}"
+          elif [ "$MODE" = "draft-only" ]; then
+            python3 run_daily_if_due.py --draft-only "${EXTRA[@]}"
+          else
+            python3 run_daily_if_due.py "${EXTRA[@]}"
+          fi
+
+      - name: Upload paper artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reef-paper-${{ github.run_id }}
+          if-no-files-found: ignore
+          path: |
+            picks.json
+            data/bets.csv
+            data/bankroll.json
+            data/automation_state.json
+            data/summaries/

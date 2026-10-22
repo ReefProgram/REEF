@@ -1,6 +1,6 @@
 # Daily workflow (NBA on Kalshi, paper only)
 
-**Run window: 3:00-4:00 PM PT daily.** This comes after afternoon injury reports and before 4:00 PM PT (7:00 ET) tips. It uses only public read-only Kalshi data, places no real orders, and uses no credentials.
+**Run window (automated):** tip-relative — about **45 minutes before the first NBA tip** on days with games (see `run_daily_if_due.py` + GitHub Action `daily-paper`). Days with no NBA games are skipped. Manual research runs can still use the classic afternoon window. Public read-only Kalshi data only; no credentials; no real orders.
 
 ## 1. RUN (3:00-4:00 PM PT)
 | Step | What | Command |

@@ -6,3 +6,6 @@ __pycache__/
 picks.json
 data/monitor_*.log
 data/fair/*.json
+data/automation_state.json
+data/summaries/*.md
+data/summaries/*.meta.json

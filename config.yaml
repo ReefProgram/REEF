@@ -38,6 +38,17 @@ poll_seconds: 15                    # orderbook poll interval
 min_poll_seconds: 5                 # floor; never poll faster (polite rate use)
 request_spacing_seconds: 1         # min gap between API calls; 429s back off per Retry-After
 
+# --- AUTO_DRAFT + tip-relative schedule (draft_picks.py / run_daily_if_due.py) ---
+# Not human research. Hourly GitHub Action checks ESPN tip times (no API key);
+# Kalshi occurrence_datetime is the fallback. Runs only in [first_tip - buffer, first_tip).
+draft:
+  draft_confidence: 76              # fixed; just above min_confidence — gates may still reject
+  draft_fair_bump: 0.03             # fair_prob = Kalshi YES mid + bump
+  draft_style: hold
+  draft_max_picks: 5
+  draft_series: KXNBAGAME
+  draft_buffer_minutes: 45          # start window this many minutes before first tip
+
 # --- in-game exit rules (exits.py; applied by `reef.py monitor` to every open position) ---
 # Priority: confidence decay -> stop-loss -> blowout -> Q3 review -> profit target.
 # Every sell must pass the fee-aware hold check (upside left to $1 vs exit fee + spread + slippage).

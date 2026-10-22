@@ -1,21 +1,23 @@
 #!/usr/bin/env python3
 """Reef paper launch helper — no credentials, no real Kalshi orders.
 
-Orchestrates the WORKFLOW.md daily path as far as it can go without research picks
-or a scheduler. Subcommands:
+Orchestrates the WORKFLOW.md daily path as far as it can go without research picks.
+Tip-relative scheduling lives in run_daily_if_due.py (hourly GitHub Action).
 
+Subcommands:
   check     egress + CLI smoke (fee, size sample, exit sim)
   markets   list tonight's Kalshi NBA slate (public API)
+  draft     AUTO_DRAFT picks.json from live Kalshi (not human research)
+  due       print tip-relative due/skip decision (see run_daily_if_due.py)
   demo      paper-place EXAMPLE sample_picks into the ledger + print summary/status
   monitor   short dry-run monitor on an event (default: first KXNBAGAME today)
   daily     markets + size/run picks.json if present; otherwise print next steps
 
 Examples:
   python3 launch_paper.py check
-  python3 launch_paper.py markets
-  python3 launch_paper.py demo
-  python3 launch_paper.py monitor --max-polls 2
-  python3 launch_paper.py daily
+  python3 launch_paper.py draft
+  python3 launch_paper.py due
+  python3 launch_paper.py daily --execute
 """
 from __future__ import annotations
 
@@ -125,11 +127,30 @@ def cmd_monitor(a):
     sh(args)
 
 
+def cmd_draft(a):
+    ensure_dirs()
+    args = [os.path.join(ROOT, "draft_picks.py")]
+    if a.date:
+        args += ["--date", a.date]
+    if a.dry_run:
+        args.append("--dry-run")
+    sh(args)
+
+
+def cmd_due(a):
+    args = [os.path.join(ROOT, "run_daily_if_due.py"), "--check-only"]
+    if a.force:
+        args.append("--force")
+    sh(args)
+
+
 def cmd_daily(a):
     ensure_dirs()
     d = a.date or date.today().isoformat()
-    print(f"=== Daily paper path for {d} (window 3:00–4:00 PM PT) ===", flush=True)
+    print(f"=== Daily paper path for {d} (tip-relative schedule; paper only) ===", flush=True)
     print("Secrets: none required for paper. No real orders.", flush=True)
+    if a.draft:
+        sh([os.path.join(ROOT, "draft_picks.py"), "--date", d])
     sh([REEF, "markets", "--date", d])
     if os.path.exists(PICKS):
         print(f"Found {PICKS} — sizing then paper-running.", flush=True)
@@ -140,10 +161,9 @@ def cmd_daily(a):
         else:
             print("Dry daily complete. Re-run with --execute to paper-place into data/bets.csv.", flush=True)
     else:
-        print(f"No {PICKS} yet — research + score picks (see WORKFLOW.md / SYSTEM_PROMPT.md),", flush=True)
-        print(f"copy examples/picks.template.json -> picks.json, then re-run:", flush=True)
-        print(f"  python3 launch_paper.py daily --execute", flush=True)
-        print("Intra-game: python3 launch_paper.py monitor --max-polls 2", flush=True)
+        print(f"No {PICKS} yet — run: python3 launch_paper.py draft", flush=True)
+        print(f"or copy examples/picks.template.json -> picks.json", flush=True)
+        print("Scheduled path: python3 run_daily_if_due.py", flush=True)
     sh([REEF, "status"])
 
 
@@ -153,6 +173,11 @@ def main():
     sp.add_parser("check", help="egress + smoke tests")
     p = sp.add_parser("markets", help="list Kalshi NBA slate")
     p.add_argument("--date")
+    p = sp.add_parser("draft", help="AUTO_DRAFT picks.json from live Kalshi")
+    p.add_argument("--date")
+    p.add_argument("--dry-run", action="store_true")
+    p = sp.add_parser("due", help="tip-relative due/skip check")
+    p.add_argument("--force", action="store_true")
     p = sp.add_parser("demo", help="paper-run EXAMPLE sample picks")
     p.add_argument("--date")
     p = sp.add_parser("monitor", help="short dry-run monitor")
@@ -162,10 +187,11 @@ def main():
     p.add_argument("--interval", type=float)
     p = sp.add_parser("daily", help="markets + size/run picks.json if present")
     p.add_argument("--date")
+    p.add_argument("--draft", action="store_true", help="run draft_picks.py first")
     p.add_argument("--execute", action="store_true", help="paper-place (still no real orders)")
     a = ap.parse_args()
-    {"check": cmd_check, "markets": cmd_markets, "demo": cmd_demo,
-     "monitor": cmd_monitor, "daily": cmd_daily}[a.cmd](a)
+    {"check": cmd_check, "markets": cmd_markets, "draft": cmd_draft, "due": cmd_due,
+     "demo": cmd_demo, "monitor": cmd_monitor, "daily": cmd_daily}[a.cmd](a)
 
 
 if __name__ == "__main__":
